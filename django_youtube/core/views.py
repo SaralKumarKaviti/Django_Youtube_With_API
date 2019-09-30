@@ -15,6 +15,8 @@ import tempfile
 from django.http import HttpResponse,HttpResponseBadRequest
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+from embed_video.fields import EmbedVideoField
+
 
 # Create your views here.
 
@@ -55,8 +57,10 @@ class HomePageView(FormView):
 					body=body,
 					media_body=MediaFileUpload(
                         tmpfile.name, chunksize=-1, resumable=True))
-				insert_request.execute()
-		return redirect()
+				result=insert_request.execute()
+				video_id=result['id']
+				html='<html><body><iframe width="420" height="315" src="https://www.youtube.com/embed/{0}"></iframe></body></html>'.format(video_id)
+		return HttpResponse(html)
 
 
 
@@ -99,7 +103,9 @@ class OAuth2CallbackView(View):
 		return redirect('/')
 
 
-
-
-
-
+'''class Item(View):
+	def get(self,request,*args,**kwargs):
+		videos=Item.object.all()
+		context={'videos',videos}
+		return render('show_video.html',context)
+'''

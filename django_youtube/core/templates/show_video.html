@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<form>
+
+{% load embed_video_tags %}
+{% video item.video 'small' %}
+{% block content %}
+{% if vidoes %}
+
+{% for v in vidoes %}
+{{ v }}
+{% endfor %}
+{% else %}
+<p>No vidoes</p>
+{% endif %}
+{% endblock %}
+</form>
+</body>
+</html>
