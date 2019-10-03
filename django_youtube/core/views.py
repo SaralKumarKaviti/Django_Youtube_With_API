@@ -20,6 +20,7 @@ from embed_video.fields import EmbedVideoField
 from apiclient.discovery import build
 from apiclient.errors import HttpError
 from django.views.decorators.csrf import requires_csrf_token
+import requests
 
 # Create your views here.
 DEVELOPER_KEY="AIzaSyBC47N-lpeWWnXEG4yMHmpcVC6b3rQwXEY"
@@ -114,8 +115,8 @@ class HomePageView(FormView):
 
 		body={
 			'snippet':{
-				'title':'My Python Youtube Video',
-				'description':'My Python Youtube Description',
+				'title':'Python to CSV file Video',
+				'description':'My Python,CSV Youtube Description',
 				'tags':'django,howto,video,api',
 				'categoryId':'27',
 
@@ -136,9 +137,20 @@ class HomePageView(FormView):
 					body=body,
 					media_body=MediaFileUpload(
                         tmpfile.name, chunksize=-1, resumable=True))
-				result=insert_request.execute()
-				video_id=result['id']
-				html='<html><body><iframe width="420" height="315" src="https://www.youtube.com/embed/{0}"></iframe></body></html>'.format(video_id)
+				response=insert_request.execute()
+				video_id=response['id']
+				channel_id=response['snippet']['channelId']
+				video_url='https://www.googleapis.com/youtube/v3/videos'
+				video_params = {'part': 'statistics','key': settings.GOOGLE_API_KEY,'id': video_id}
+				r=requests.get(video_url, params=video_params)
+				results = r.json()['items']
+				print(results)
+				context = {'video_id':video_id,'stats':results}
+				video_details=VideoDetails(video_id=vidoe_id,channel_id=channel_id)
+				video_details.save()
+		return render(self.request,'core/uploaded_videos.html',context)
+
+				#html='<html><body><iframe width="420" height="315" src="https://www.youtube.com/embed/{0}"></iframe></body></html>'.format(video_id)
 				#print(api_key)
 		
 		#print(type(youtube))
@@ -149,9 +161,51 @@ class HomePageView(FormView):
 
 		return HttpResponse(html)
 
+def search_video(request):
+   search_url = 'https://www.googleapis.com/youtube/v3/search'
+   video_url = 'https://www.googleapis.com/youtube/v3/videos'
+   video_params = {
+       'part': 'status,statistics,localizations',
+       'key': settings.GOOGLE_API_KEY,
+       'id': 'wfcVCzjKczU'
+   }
+   r = requests.get(video_url, params=video_params)
+   results = r.json()
+   print(results)
+   return render(request, 'core/video_details.html',{'results':results})
 
 
+def get_channel_videos(request):
+   
+   # get Uploads playlist id
+   youtube = build('youtube', 'v3', developerKey=settings.GOOGLE_API_KEY)
+   res = youtube.channels().list(id='UCgNNEmqchxs5XS8encIBE4w',part='contentDetails').execute()
+   playlist_id = res['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+   videos = []
+   video_stats = []
+   next_page_token = None
 
+   while 1:
+
+   	res = youtube.playlistItems().list(playlistId=playlist_id,part='snippet',maxResults=50,pageToken=next_page_token).execute()
+   	videos += res['items']
+   	next_page_token = res.get('nextPageToken')
+   	if next_page_token is None:
+   		break
+   for video in videos:
+   	print(video['snippet']['title'])
+   	video_id = video['snippet']['resourceId']['videoId']
+   	video_url = 'https://www.googleapis.com/youtube/v3/videos'
+   	video_params = {'part': 'statistics','key': settings.GOOGLE_API_KEY,'id': video_id}
+   	r = requests.get(video_url, params=video_params)
+   	results = r.json()
+   	video_stats.append(results)
+   	print(results)
+   	context = {'videos': videos,'video_stats':video_stats,
+       # 'url': f'https://www.youtube.com/watch?v=',
+       }
+
+   return render(request, 'core/channel_details.html', context)
 class AuthorizeView(View):
 
 	def get(self,request, *args, **kwargs):

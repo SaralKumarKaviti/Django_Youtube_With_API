@@ -137,5 +137,9 @@ GOOGLE_OAUTH2_CLIENT_ID='624041456768-cb40tmv0kjt740dqrfa917pf3ucr7ll7.apps.goog
 GOOGLE_OAUTH2_CLIENT_SECRET='Hwjx_ADEB3njjpPqsN2OJeuh'
 GOOGLE_OAUTH2_CLIENT_SECRET_JSON='/home/apptrinity08/Saral_Worklog/django_youtube/django_youtube/client_id.json'
 
+### google api key
+GOOGLE_API_KEY='AIzaSyBC47N-lpeWWnXEG4yMHmpcVC6b3rQwXEY'
 
-
+FILE_UPLOAD_HANDLERS = [
+'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
